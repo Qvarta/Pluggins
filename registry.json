@@ -2,124 +2,14 @@
   "version": 1,
   "plugins": [
     {
-      "id": "catwalk",
-      "name": "Catwalk",
-      "version": "1.1.1",
-      "author": "MannuVilasara",
-      "description": "A cute animated cat for your bar.",
-      "repository": "https://github.com/noctalia-dev/noctalia-plugins",
-      "minNoctaliaVersion": "3.6.0",
-      "license": "MIT",
-      "lastUpdated": "2025-12-30T10:46:21-08:00"
-    },
-    {
-      "id": "fancy-audiovisualizer",
-      "name": "Fancy Audiovisualizer",
-      "version": "1.0.5",
-      "author": "Noctalia Team",
-      "description": "Lemmy's fancy circular audio visualizer.",
-      "repository": "https://github.com/noctalia-dev/noctalia-plugins",
-      "minNoctaliaVersion": "3.7.2",
-      "license": "MIT",
-      "lastUpdated": "2026-01-01T12:04:43+01:00"
-    },
-    {
-      "id": "hello-world",
-      "name": "Hello World",
-      "version": "1.0.4",
-      "author": "Noctalia Team <team@noctalia.dev>",
-      "description": "A simple Hello World plugin demonstrating functionalities.",
-      "repository": "https://github.com/noctalia-dev/noctalia-plugins",
-      "minNoctaliaVersion": "3.6.0",
-      "license": "MIT",
-      "lastUpdated": "2025-12-21T22:07:55+01:00"
-    },
-    {
-      "id": "launcher-button",
-      "name": "Launcher Button",
-      "version": "1.0.0",
-      "author": "Noctalia Team <team@noctalia.dev>",
-      "description": "A simple button that opens the app launcher.",
-      "repository": "https://github.com/noctalia-dev/noctalia-plugins",
-      "minNoctaliaVersion": "3.6.0",
-      "license": "MIT",
-      "lastUpdated": "2025-12-07T16:04:14+01:00"
-    },
-    {
-      "id": "mangowc-layout-switcher",
-      "name": "Mangowc Layout Switcher",
+      "id": "online-radio",
+      "name": "Online radio",
       "version": "1.1.0",
-      "author": "atheeq-rhxn",
-      "description": "Switch between different mangowc layouts",
-      "repository": "https://github.com/noctalia-dev/noctalia-plugins",
+      "author": "Qvarta",
+      "description": "A simple plugin for online radio.",
+      "repository": "https://github.com/Qvarta/Pluggins",
       "minNoctaliaVersion": "3.6.0",
       "license": "MIT",
-      "lastUpdated": "2025-12-16T15:47:15+05:30"
-    },
-    {
-      "id": "mini-docker",
-      "name": "Mini Docker",
-      "version": "2.1.0",
-      "author": "MannuVilasara",
-      "description": "Manage Docker containers, images, volumes & networks",
-      "repository": "https://github.com/noctalia-dev/noctalia-plugins",
-      "minNoctaliaVersion": "3.6.0",
-      "license": "MIT",
-      "lastUpdated": "2025-12-17T22:22:38+05:30"
-    },
-    {
-      "id": "network-indicator",
-      "name": "NetworkIndicator",
-      "version": "1.0.2",
-      "author": "tonigineer",
-      "description": "A `lively` network traffic indicator.",
-      "repository": "https://github.com/noctalia-dev/noctalia-plugins",
-      "minNoctaliaVersion": "3.7.5",
-      "license": "MIT",
-      "lastUpdated": "2025-12-26T23:47:22+01:00"
-    },
-    {
-      "id": "privacy-indicator",
-      "name": "Privacy Indicator",
-      "version": "1.0.10",
-      "author": "Noctalia Team <team@noctalia.dev>",
-      "description": "A privacy indicator widget that shows when microphone, camera or screen sharing is active.",
-      "repository": "https://github.com/noctalia-dev/noctalia-plugins",
-      "minNoctaliaVersion": "3.6.0",
-      "license": "MIT",
-      "lastUpdated": "2025-12-17T16:37:25+01:00"
-    },
-    {
-      "id": "simple-notes",
-      "name": "Simple Notes",
-      "version": "1.0.0",
-      "author": "fusuyfusuy",
-      "description": "A simple note taking plugin for Noctalia Shell.",
-      "repository": "",
-      "minNoctaliaVersion": "3.7.1",
-      "license": "MIT",
-      "lastUpdated": "2025-12-29T15:32:27+03:00"
-    },
-    {
-      "id": "todo",
-      "name": "Todo List",
-      "version": "1.3.1",
-      "author": "lonerOrz <lonerOrz@qq.com>",
-      "description": "A simple todo list manager plugin for Noctalia Shell.",
-      "repository": "https://github.com/noctalia-dev/noctalia-plugins",
-      "minNoctaliaVersion": "3.7.1",
-      "license": "MIT",
-      "lastUpdated": "2025-12-29T09:30:57-05:00"
-    },
-    {
-      "id": "update-count",
-      "name": "Update Count",
-      "version": "1.0.7",
-      "author": "BukoMoon",
-      "description": "Checks for system updates and shows the update count. Click to run update command in a terminal.",
-      "repository": "https://github.com/noctalia-dev/noctalia-plugins",
-      "minNoctaliaVersion": "3.6.0",
-      "license": "GPLv3",
       "lastUpdated": "2025-12-29T20:43:28-05:00"
     }
   ]
