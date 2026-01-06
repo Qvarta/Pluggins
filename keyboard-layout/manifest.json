@@ -8,7 +8,8 @@
   "repository": "https://github.com/Qvarta/noctalia-plugins",
  "description": "Very simple keyboard-layout widget.",
   "entryPoints": {
-    "barWidget": "BarWidget.qml"
+    "barWidget": "BarWidget.qml",
+    "settings": "Settings.qml"
   },
   "dependencies": {
     "plugins": []

@@ -104,7 +104,7 @@ Item {
                         }
                         
                         background: Rectangle {
-                            color: Color.transparent
+                            color: Color.mSurface
                         }
                     }
 
@@ -127,7 +127,7 @@ Item {
                                                     pluginApi.mainInstance.currentPlayingStation === modelData.name);
                                     
                                     if (isPlaying) {
-                                        return Color.mSurfaceVariant;
+                                        return Color.mSurface;
                                     } else if (mouseArea.containsPress) {
                                         return Qt.darker(Color.mSurface, 1.1);
                                     } else if (mouseArea.containsMouse) {
@@ -138,7 +138,7 @@ Item {
                                 }
                                 radius: Style.radiusS
                                 border.width: Style.borderS
-                                border.color: mouseArea.containsMouse ? Color.mOutline : Color.transparent
+                                border.color: mouseArea.containsMouse ? Color.mOutline : Color.mSurface
 
                                 property string stationName: modelData.name
                                 property string stationUrl: modelData.url
@@ -178,12 +178,12 @@ Item {
                                         width: 24
                                         height: 24
                                         radius: 12
-                                        color: Color.transparent
+                                        color: Color.mSurface
                                         
                                         NIcon {
                                             anchors.centerIn: parent
                                             icon: stationButton.isPlaying ? "player-play" : "activity"
-                                            color: stationButton.isPlaying ? Color.mPrimary : Color.mOnSurfaceVariant
+                                            color: stationButton.isPlaying ? Color.mOnPrimary : Color.mPrimary
                                             width: stationButton.isPlaying ? 16 : 12
                                             height: stationButton.isPlaying ? 16 : 12
                                             opacity: stationButton.isPlaying ? 1 : 0.5
