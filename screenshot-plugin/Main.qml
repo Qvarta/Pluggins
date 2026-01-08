@@ -7,13 +7,11 @@ Item {
     id: root
     property var pluginApi: null
     
-    // Регистрируем себя как mainInstance для Panel.qml
     Component.onCompleted: {
         if (pluginApi) {
             pluginApi.mainInstance = root;
         }
         
-        // Создаем папку для скриншотов
         var mkdirProcess = Qt.createQmlObject('import QtQuick; import Quickshell.Io; Process {}', root);
         mkdirProcess.command = ["sh", "-c", "mkdir -p ~/Pictures/Screenshots"];
         mkdirProcess.startDetached();
@@ -22,7 +20,6 @@ Item {
         });
     }
     
-    // Функция для создания скриншота
     function takeScreenshot(mode) {
         var command = "hyprshot -m " + mode + " -o ~/Pictures/Screenshots";
         
@@ -40,7 +37,6 @@ Item {
         }
     }
     
-    // IPC обработчик для открытия панели
     IpcHandler {
         target: "plugin:screenshot-plugin"
         
