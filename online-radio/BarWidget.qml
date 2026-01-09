@@ -26,7 +26,7 @@ Item {
         screen: root.screen
         oppositeDirection: BarService.getPillDirection(root)
         icon: root.currentIconName
-        text: currentPlayingStation === "" ? pluginApi?.tr("notSelected") : [pluginApi?.tr("nowPlay"), currentPlayingStation].join(" ")
+        text: currentPlayingStation === "" ? pluginApi?.tr("notSelected") : currentPlayingStation
         autoHide: false
         forceOpen: false
         forceClose: false
