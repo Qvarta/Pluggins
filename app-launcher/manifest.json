@@ -6,7 +6,7 @@
     "description": "App Launcher Plugin",
     "license": "MIT",
     "entryPoints": {
-        "main": "BarWidget.qml",
+        "barWidget": "BarWidget.qml",
         "panel": "Panel.qml"
     },
     "dependencies": []

@@ -1,29 +1,36 @@
 import QtQuick
-import QtQuick.Controls
-import QtQuick.Layouts
 import Quickshell
 import qs.Commons
+import qs.Modules.Bar.Extras
+import qs.Services.UI
+import qs.Widgets
 
-Rectangle {
+Item {
     id: root
 
     property var pluginApi: null
+    property ShellScreen screen
 
-    implicitWidth: row.implicitWidth + Style.marginM * 2
-    implicitHeight: Style.barHeight - 6
-    
-    NText {
-        anchors.centerIn: parent
-        text: "🇦🇧"
-        pointSize: Style.fontSizeS
-        color: colors.mOnPrimary
-            
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            onClicked: {
-                pluginApi.openPanel(root.screen,this);
-            }
+    readonly property bool isBarVertical: Settings.data.bar.position === "left" || Settings.data.bar.position === "right"
+    readonly property string displayMode: "auto"
+
+    implicitWidth: pill.width
+    implicitHeight: pill.height
+
+    BarPill {
+        id: pill
+
+        screen: root.screen
+        oppositeDirection: BarService.getPillDirection(root)
+        icon: "123"
+        text: "text"
+        autoHide: false
+        forceOpen: true
+        forceClose: false
+        tooltipText: "App"
+        
+        onClicked: {
+            pluginApi.openPanel(root.screen,this);
         }
     }
 }
