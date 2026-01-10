@@ -16,19 +16,22 @@ Item {
     property int itemHeight: 56
     
     property var allApps: []
+    property var favoriteApps: []
     property string searchQuery: ""
     property int selectedIndex: 0
+    property int currentTab: 0 // 0 - Все приложения, 1 - Избранное
 
     anchors.fill: parent
 
     property var filteredApps: {
         var query = searchQuery.toLowerCase().trim();
+        var appsToFilter = currentTab === 0 ? allApps : favoriteApps;
         
         if (query === "") {
-            return allApps.slice(0, 30);
+            return appsToFilter.slice(0, 30);
         }
         
-        return allApps.filter(function(app) {
+        return appsToFilter.filter(function(app) {
             var name = (app.name || "").toLowerCase();
             var comment = (app.comment || "").toLowerCase();
             return name.includes(query) || comment.includes(query);
@@ -37,10 +40,33 @@ Item {
     
     Component.onCompleted: {
         loadApps();
+        loadFavoriteApps();
     }
     
     function loadApps() {
         allApps = getAllApps();
+    }
+    
+    function loadFavoriteApps() {
+        // TODO: Загрузка избранных приложений из конфигурации
+        // Пока оставляем пустым
+        favoriteApps = [];
+    }
+    
+    function addToFavorites(app) {
+        // TODO: Реализовать добавление в избранное
+        console.log("Добавить в избранное:", app.name || app.id);
+    }
+    
+    function removeFromFavorites(appId) {
+        // TODO: Реализовать удаление из избранного
+        console.log("Удалить из избранного:", appId);
+    }
+    
+    function isFavorite(appId) {
+        return favoriteApps.some(function(app) {
+            return app.id === appId;
+        });
     }
     
     function getAllApps() {
@@ -115,6 +141,121 @@ Item {
         });
     }
 
+    // Контекстное меню для приложений
+    NPopupContextMenu {
+        id: appContextMenu
+        itemHeight: 36
+        minWidth: 160
+        
+        property var currentApp: null
+        
+        model: [
+            {
+                "label": "Запустить",
+                "action": "launch",
+                "icon": "player-play",
+                "enabled": currentApp !== null
+            },
+            {
+                "label": "Добавить в избранное",
+                "action": "add-to-favorites",
+                "icon": "star-filled",
+                "enabled": currentApp !== null
+            },
+            {
+                "label": "Удалить из избранного",
+                "action": "remove-from-favorites",
+                "icon": "star",
+                "enabled": currentApp !== null && isFavorite(currentApp.id),
+                "visible": currentApp !== null && isFavorite(currentApp.id)
+            }
+        ]
+        
+        onTriggered: function(action, item) {
+            if (currentApp) {
+                if (action === "launch") {
+                    launchApp(currentApp);
+                } else if (action === "add-to-favorites") {
+                    addToFavorites(currentApp);
+                    // Обновляем модель меню после добавления
+                    Qt.callLater(updateMenuModel);
+                } else if (action === "remove-from-favorites") {
+                    removeFromFavorites(currentApp.id);
+                    // Обновляем модель меню после удаления
+                    Qt.callLater(updateMenuModel);
+                    // Если мы на вкладке избранного, обновляем список
+                    if (currentTab === 1) {
+                        filteredApps = filteredApps.filter(function(app) {
+                            return app.id !== currentApp.id;
+                        });
+                    }
+                }
+            }
+            close();
+        }
+        
+        function updateMenuModel() {
+            // Обновляем модель для отображения правильного состояния кнопок
+            var newModel = [
+                {
+                    "label": "Запустить",
+                    "action": "launch",
+                    "icon": "player-play",
+                    "enabled": currentApp !== null
+                }
+            ];
+            
+            if (currentApp && isFavorite(currentApp.id)) {
+                newModel.push({
+                    "label": "Удалить из избранного",
+                    "action": "remove-from-favorites",
+                    "icon": "star",
+                    "enabled": true
+                });
+            } else {
+                newModel.push({
+                    "label": "Добавить в избранное",
+                    "action": "add-to-favorites",
+                    "icon": "star-filled",
+                    "enabled": currentApp !== null
+                });
+            }
+            
+            model = newModel;
+        }
+        
+        function openForApp(app, mouseX, mouseY) {
+            currentApp = app;
+            updateMenuModel();
+            
+            // Создаем временный элемент для позиционирования
+            var anchor = Qt.createQmlObject(`
+                import QtQuick
+                Item {
+                    width: 1
+                    height: 1
+                    x: ${mouseX}
+                    y: ${mouseY}
+                }
+            `, root, "contextMenuAnchor");
+            
+            openAtItem(anchor, null);
+            
+            // Удаляем временный элемент после закрытия меню
+            appContextMenu.closed.connect(function() {
+                if (anchor) {
+                    anchor.destroy();
+                }
+                appContextMenu.closed.disconnect(arguments.callee);
+            });
+        }
+        
+        function close() {
+            visible = false;
+            currentApp = null;
+        }
+    }
+
     Rectangle {
         id: panelContainer
         anchors.fill: parent
@@ -128,10 +269,120 @@ Item {
             }
             spacing: Style.marginS
 
+            // Панель вкладок
+            Rectangle {
+                id: tabsContainer
+                Layout.fillWidth: true
+                Layout.preferredHeight: 40
+                color: Color.mSurfaceVariant
+                radius: Style.radiusM
+                
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: Style.marginS
+                    spacing: 0
+                    
+                    // Вкладка "Все приложения"
+                    Rectangle {
+                        id: allAppsTab
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        radius: Style.radiusS
+                        color: currentTab === 0 ? Color.mPrimary : "transparent"
+                        
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                currentTab = 0;
+                                selectedIndex = 0;
+                                searchQuery = "";
+                                searchInput.text = "";
+                            }
+                        }
+                        
+                        RowLayout {
+                            anchors.centerIn: parent
+                            spacing: Style.marginS
+                            
+                            NIcon {
+                                icon: "apps"
+                                color: currentTab === 0 ? Color.mOnPrimary : Color.mOnSurfaceVariant
+                                width: 16
+                                height: 16
+                            }
+                            
+                            NText {
+                                text: "Все"
+                                color: currentTab === 0 ? Color.mOnPrimary : Color.mOnSurfaceVariant
+                                font.pointSize: Style.fontSizeS
+                                font.weight: currentTab === 0 ? Font.Bold : Font.Normal
+                            }
+                        }
+                    }
+                    
+                    // Вкладка "Избранное"
+                    Rectangle {
+                        id: favoritesTab
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        radius: Style.radiusS
+                        color: currentTab === 1 ? Color.mPrimary : "transparent"
+                        
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                currentTab = 1;
+                                selectedIndex = 0;
+                                searchQuery = "";
+                                searchInput.text = "";
+                            }
+                        }
+                        
+                        RowLayout {
+                            anchors.centerIn: parent
+                            spacing: Style.marginS
+                            
+                            NIcon {
+                                icon: "star"
+                                color: currentTab === 1 ? Color.mOnPrimary : Color.mOnSurfaceVariant
+                                width: 16
+                                height: 16
+                            }
+                            
+                            NText {
+                                text: "Избранное"
+                                color: currentTab === 1 ? Color.mOnPrimary : Color.mOnSurfaceVariant
+                                font.pointSize: Style.fontSizeS
+                                font.weight: currentTab === 1 ? Font.Bold : Font.Normal
+                            }
+                            
+                            // Счетчик избранных
+                            Rectangle {
+                                visible: favoriteApps.length > 0
+                                width: 16
+                                height: 16
+                                radius: 8
+                                color: currentTab === 1 ? Color.mOnPrimary : Color.mPrimary
+                                
+                                NText {
+                                    anchors.centerIn: parent
+                                    text: favoriteApps.length
+                                    color: currentTab === 1 ? Color.mPrimary : Color.mOnPrimary
+                                    font.pointSize: Style.fontSizeXS
+                                    font.bold: true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             NTextInput {
                 id: searchInput
                 Layout.fillWidth: true
-                placeholderText: "Поиск приложений..."
+                placeholderText: currentTab === 0 ? "Поиск приложений..." : "Поиск в избранном..."
                 inputIconName: "search"
                 
                 Keys.onReturnPressed: {
@@ -211,12 +462,21 @@ Item {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
+                            acceptedButtons: Qt.LeftButton | Qt.RightButton
                             onEntered: {
                                 selectedIndex = index;
                             }
-                            onClicked: {
+                            onClicked: function(mouse) {
                                 selectedIndex = index;
-                                launchApp(modelData);
+                                if (mouse.button === Qt.LeftButton) {
+                                    launchApp(modelData);
+                                } else if (mouse.button === Qt.RightButton) {
+                                    // Открываем контекстное меню для этого приложения
+                                    var appDelegatePos = appDelegate.mapToItem(root, 0, 0);
+                                    var clickX = mouse.x + appDelegatePos.x;
+                                    var clickY = mouse.y + appDelegatePos.y;
+                                    appContextMenu.openForApp(modelData, clickX, clickY);
+                                }
                             }
                         }
 
@@ -304,7 +564,15 @@ Item {
                         spacing: Style.marginM
                         
                         NIcon {
-                            icon: searchQuery === "" ? "apps" : "search-off"
+                            icon: {
+                                if (searchQuery !== "") {
+                                    return "search-off";
+                                } else if (currentTab === 1) {
+                                    return favoriteApps.length === 0 ? "star-filled" : "search";
+                                } else {
+                                    return "apps";
+                                }
+                            }
                             color: Color.mOnSurfaceVariant
                             width: 64
                             height: 64
@@ -313,9 +581,15 @@ Item {
                         }
                         
                         NText {
-                            text: searchQuery === "" 
-                                  ? "Начните вводить название приложения" 
-                                  : "Ничего не найдено"
+                            text: {
+                                if (searchQuery !== "") {
+                                    return "Ничего не найдено";
+                                } else if (currentTab === 1) {
+                                    return favoriteApps.length === 0 ? "Избранное пусто" : "Начните вводить название";
+                                } else {
+                                    return "Начните вводить название приложения";
+                                }
+                            }
                             color: Color.mOnSurfaceVariant
                             font.pointSize: Style.fontSizeM
                             font.weight: Font.Medium
@@ -323,9 +597,15 @@ Item {
                         }
                         
                         NText {
-                            text: searchQuery === "" 
-                                  ? "Используйте поле поиска выше" 
-                                  : "Попробуйте другой запрос"
+                            text: {
+                                if (searchQuery !== "") {
+                                    return "Попробуйте другой запрос";
+                                } else if (currentTab === 1) {
+                                    return favoriteApps.length === 0 ? "Добавьте приложения в избранное через контекстное меню" : "Используйте поле поиска выше";
+                                } else {
+                                    return "Используйте поле поиска выше";
+                                }
+                            }
                             color: Color.mOnSurfaceVariant
                             font.pointSize: Style.fontSizeS
                             opacity: 0.7
@@ -345,7 +625,10 @@ Item {
 
                 NText {
                     anchors.centerIn: parent
-                    text: filteredApps.length + " приложений"
+                    text: {
+                        var total = currentTab === 0 ? allApps.length : favoriteApps.length;
+                        return filteredApps.length + " из " + total + " приложений";
+                    }
                     color: Color.mOnSurfaceVariant
                     font.pointSize: Style.fontSizeS
                     opacity: 0.7

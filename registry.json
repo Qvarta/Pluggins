@@ -37,13 +37,13 @@
     {
       "id": "app-launcher",
       "name": "App Launcher",
-      "version": "0.0.1",
+      "version": "1.0.2",
       "author": "Qvarta",
       "description": "App Launcher Plugin",
       "repository": "https://github.com/Qvarta/Pluggins",
       "minNoctaliaVersion": "3.6.0",
       "license": "MIT",
-      "lastUpdated": "2025-12-29T20:43:28-05:00"
+      "lastUpdated": "2026-01-10T20:43:28-05:00"
     }
   ]
 }
