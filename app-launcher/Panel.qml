@@ -16,12 +16,21 @@ Item {
     property int itemHeight: 56
     
     property var allApps: []
-    property var favoriteApps: []
+    property var favoriteApps: [] // Массив объектов с id, name, icon, comment
     property string searchQuery: ""
     property int selectedIndex: 0
-    property int currentTab: 0 // 0 - Все приложения, 1 - Избранное
+    property int currentTab: 1 // 0 - Все приложения, 1 - Избранное
 
     anchors.fill: parent
+
+    function saveSettings(key, value) {
+        // Update plugin settings
+        pluginApi.pluginSettings[key] = value
+        // Persist to disk
+        pluginApi.saveSettings()
+
+        Logger.i("MyPlugin", "Settings saved")
+    }
 
     property var filteredApps: {
         var query = searchQuery.toLowerCase().trim();
@@ -40,7 +49,13 @@ Item {
     
     Component.onCompleted: {
         loadApps();
-        loadFavoriteApps();
+        
+        if (!pluginApi || !pluginApi.pluginSettings) {
+            Qt.callLater(function() {
+                Logger.i("Попытка загрузки избранного...");
+                loadFavoriteApps();
+            });
+        }
     }
     
     function loadApps() {
@@ -48,25 +63,112 @@ Item {
     }
     
     function loadFavoriteApps() {
-        // TODO: Загрузка избранных приложений из конфигурации
-        // Пока оставляем пустым
-        favoriteApps = [];
+        // Загрузка избранных приложений из конфигурации
+        if (pluginApi && pluginApi.pluginSettings && pluginApi.pluginSettings.favorites) {
+            favoriteApps = pluginApi.pluginSettings.favorites;
+            Logger.i("Загружено избранных приложений:", favoriteApps.length);
+        } else {
+            favoriteApps = [];
+            Logger.i("Избранные приложения не найдены в настройках");
+        }
     }
     
     function addToFavorites(app) {
-        // TODO: Реализовать добавление в избранное
-        console.log("Добавить в избранное:", app.name || app.id);
+        // Проверяем, нет ли уже этого приложения в избранном
+        var alreadyInFavorites = favoriteApps.some(function(favApp) {
+            return favApp.id === app.id;
+        });
+        
+        if (!alreadyInFavorites) {
+            // Сохраняем только идентификатор и данные для отображения
+            var favApp = {
+                id: app.id || "",
+                name: app.name || "",
+                icon: app.icon || "",
+                comment: app.comment || "",
+                isFavorite: true // Флаг для удобства
+            };
+            
+            favoriteApps.push(favApp);
+            Logger.i("Добавлено в избранное:", app.name || app.id);
+            
+            // Сохраняем избранное в настройках
+            if (pluginApi && typeof pluginApi.saveSettings === 'function') {
+                try {
+                    pluginApi.pluginSettings.favorites = favoriteApps;
+                    pluginApi.saveSettings();
+                    Logger.i("MyPlugin", "Избранное сохранено в настройках");
+                } catch (e) {
+                    Logger.e("Ошибка при сохранении избранного:", e);
+                }
+            }
+            
+            // Принудительно обновляем свойство для реактивности
+            favoriteApps = favoriteApps.slice();
+            
+            // Обновляем selectedIndex если нужно
+            if (currentTab === 1 && filteredApps.length > 0) {
+                selectedIndex = Math.min(selectedIndex, filteredApps.length - 1);
+            }
+        } else {
+            Logger.i("Приложение уже в избранном:", app.name || app.id);
+        }
     }
     
     function removeFromFavorites(appId) {
-        // TODO: Реализовать удаление из избранного
-        console.log("Удалить из избранного:", appId);
+        // Сохраняем старое количество для сравнения
+        var oldLength = favoriteApps.length;
+        
+        // Фильтруем массив, удаляя приложение с указанным ID
+        favoriteApps = favoriteApps.filter(function(app) {
+            return app.id !== appId;
+        });
+        
+        // Проверяем, было ли что-то удалено
+        if (favoriteApps.length < oldLength) {
+            Logger.i("Удалено из избранного:", appId);
+            
+            // Сохраняем изменения в настройках
+            if (pluginApi && typeof pluginApi.saveSettings === 'function') {
+                try {
+                    pluginApi.pluginSettings.favorites = favoriteApps;
+                    pluginApi.saveSettings();
+                    Logger.i("MyPlugin", "Избранное обновлено в настройках");
+                } catch (e) {
+                    Logger.e("Ошибка при сохранении избранного:", e);
+                }
+            }
+            
+            // Принудительно обновляем свойство для реактивности
+            favoriteApps = favoriteApps.slice();
+            
+            // Обновляем selectedIndex если нужно
+            if (currentTab === 1 && filteredApps.length > 0) {
+                selectedIndex = Math.min(selectedIndex, filteredApps.length - 1);
+            }
+        }
     }
     
     function isFavorite(appId) {
         return favoriteApps.some(function(app) {
             return app.id === appId;
         });
+    }
+    
+    function findAppById(appId) {
+        return allApps.find(function(app) {
+            return app.id === appId;
+        });
+    }
+    
+    function getFullAppFromFavorite(favApp) {
+        if (!favApp || !favApp.id) return null;
+        
+        var fullApp = findAppById(favApp.id);
+        if (!fullApp) {
+            Logger.w("Приложение не найдено в общем списке:", favApp.id, favApp.name);
+        }
+        return fullApp;
     }
     
     function getAllApps() {
@@ -90,7 +192,7 @@ Item {
                     return nameA.localeCompare(nameB);
                 });
                 
-                apps = apps.map(function(app) {
+                apps.forEach(function(app) {
                     var executableName = "";
                     
                     if (app.command && Array.isArray(app.command) && app.command.length > 0) {
@@ -107,11 +209,11 @@ Item {
                     }
                     
                     app.executableName = executableName;
-                    return app;
                 });
                 
             }
         } catch (e) {
+            Logger.e("Ошибка при загрузке приложений:", e);
         }
         
         return apps;
@@ -124,24 +226,43 @@ Item {
         
         Qt.callLater(function() {
             try {
-                if (app.command && Array.isArray(app.command) && app.command.length > 0) {
-                    if (typeof Quickshell !== 'undefined' && Quickshell.execDetached) {
-                        Quickshell.execDetached(app.command);
+                // Определяем, какое приложение запускать
+                var appToLaunch;
+                
+                if (currentTab === 0) {
+                    // Из общего списка - используем напрямую
+                    appToLaunch = app;
+                } else {
+                    // Из избранного - ищем полное приложение
+                    appToLaunch = getFullAppFromFavorite(app);
+                    
+                    if (!appToLaunch) {
+                        Logger.e("Не удалось найти полное приложение для запуска:", app.name || app.id);
+                        // TODO: Можно показать уведомление пользователю
+                        return;
                     }
-                } else if (app.execute && typeof app.execute === 'function') {
-                    app.execute();
-                } else if (app.exec) {
-                    var command = app.exec.split(' ');
+                }
+                
+                Logger.i("Запуск приложения:", appToLaunch.name || appToLaunch.id);
+                
+                if (appToLaunch.command && Array.isArray(appToLaunch.command) && appToLaunch.command.length > 0) {
+                    if (typeof Quickshell !== 'undefined' && Quickshell.execDetached) {
+                        Quickshell.execDetached(appToLaunch.command);
+                    }
+                } else if (appToLaunch.execute && typeof appToLaunch.execute === 'function') {
+                    appToLaunch.execute();
+                } else if (appToLaunch.exec) {
+                    var command = appToLaunch.exec.split(' ');
                     if (typeof Quickshell !== 'undefined' && Quickshell.execDetached) {
                         Quickshell.execDetached(command);
                     }
                 }
             } catch (e) {
+                Logger.e("Ошибка при запуске приложения:", e);
             }
         });
     }
 
-    // Контекстное меню для приложений
     NPopupContextMenu {
         id: appContextMenu
         itemHeight: 36
@@ -183,12 +304,6 @@ Item {
                     removeFromFavorites(currentApp.id);
                     // Обновляем модель меню после удаления
                     Qt.callLater(updateMenuModel);
-                    // Если мы на вкладке избранного, обновляем список
-                    if (currentTab === 1) {
-                        filteredApps = filteredApps.filter(function(app) {
-                            return app.id !== currentApp.id;
-                        });
-                    }
                 }
             }
             close();
@@ -267,7 +382,7 @@ Item {
                 fill: parent
                 margins: Style.marginM
             }
-            spacing: Style.marginS
+            spacing: Style.marginL
 
             // Панель вкладок
             Rectangle {
@@ -281,46 +396,7 @@ Item {
                     anchors.fill: parent
                     anchors.margins: Style.marginS
                     spacing: 0
-                    
-                    // Вкладка "Все приложения"
-                    Rectangle {
-                        id: allAppsTab
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        radius: Style.radiusS
-                        color: currentTab === 0 ? Color.mPrimary : "transparent"
-                        
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                currentTab = 0;
-                                selectedIndex = 0;
-                                searchQuery = "";
-                                searchInput.text = "";
-                            }
-                        }
-                        
-                        RowLayout {
-                            anchors.centerIn: parent
-                            spacing: Style.marginS
-                            
-                            NIcon {
-                                icon: "apps"
-                                color: currentTab === 0 ? Color.mOnPrimary : Color.mOnSurfaceVariant
-                                width: 16
-                                height: 16
-                            }
-                            
-                            NText {
-                                text: "Все"
-                                color: currentTab === 0 ? Color.mOnPrimary : Color.mOnSurfaceVariant
-                                font.pointSize: Style.fontSizeS
-                                font.weight: currentTab === 0 ? Font.Bold : Font.Normal
-                            }
-                        }
-                    }
-                    
+
                     // Вкладка "Избранное"
                     Rectangle {
                         id: favoritesTab
@@ -373,6 +449,44 @@ Item {
                                     font.pointSize: Style.fontSizeXS
                                     font.bold: true
                                 }
+                            }
+                        }
+                    }
+                    // Вкладка "Все приложения"
+                    Rectangle {
+                        id: allAppsTab
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        radius: Style.radiusS
+                        color: currentTab === 0 ? Color.mPrimary : "transparent"
+                        
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                currentTab = 0;
+                                selectedIndex = 0;
+                                searchQuery = "";
+                                searchInput.text = "";
+                            }
+                        }
+                        
+                        RowLayout {
+                            anchors.centerIn: parent
+                            spacing: Style.marginS
+                            
+                            NIcon {
+                                icon: "apps"
+                                color: currentTab === 0 ? Color.mOnPrimary : Color.mOnSurfaceVariant
+                                width: 16
+                                height: 16
+                            }
+                            
+                            NText {
+                                text: "Все"
+                                color: currentTab === 0 ? Color.mOnPrimary : Color.mOnSurfaceVariant
+                                font.pointSize: Style.fontSizeS
+                                font.weight: currentTab === 0 ? Font.Bold : Font.Normal
                             }
                         }
                     }
@@ -568,7 +682,7 @@ Item {
                                 if (searchQuery !== "") {
                                     return "search-off";
                                 } else if (currentTab === 1) {
-                                    return favoriteApps.length === 0 ? "star-filled" : "search";
+                                    return favoriteApps.length === 0 ? "star_outline" : "search";
                                 } else {
                                     return "apps";
                                 }
@@ -627,7 +741,8 @@ Item {
                     anchors.centerIn: parent
                     text: {
                         var total = currentTab === 0 ? allApps.length : favoriteApps.length;
-                        return filteredApps.length + " из " + total + " приложений";
+                        var showing = filteredApps.length;
+                        return showing + " из " + total + " приложений";
                     }
                     color: Color.mOnSurfaceVariant
                     font.pointSize: Style.fontSizeS

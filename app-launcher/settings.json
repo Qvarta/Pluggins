@@ -1,0 +1,18 @@
+{
+  "favorites": [
+    {
+      "id": "vlc",
+      "name": "Медиаплеер VLC",
+      "icon": "vlc",
+      "comment": "Универсальный проигрыватель видео и аудио",
+      "isFavorite": true
+    },
+    {
+      "id": "org.gnome.Calculator",
+      "name": "Калькулятор",
+      "icon": "org.gnome.Calculator",
+      "comment": "Вычисления: арифметические, научные и финансовые",
+      "isFavorite": true
+    }
+  ]
+}
