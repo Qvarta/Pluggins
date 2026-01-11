@@ -303,6 +303,7 @@ Item {
                 
                 Component.onCompleted: {
                     if (pluginApi && pluginApi.mainInstance) {
+                        pluginApi.mainInstance.initializePanel();
                         pluginApi.mainInstance.allApps = pluginApi.mainInstance.getAllApps();
                     }
                 }

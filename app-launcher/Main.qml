@@ -24,6 +24,13 @@ Item {
         loadFavoriteApps();
     }
     
+    // Функция для инициализации при открытии панели
+    function initializePanel() {
+        // Загружаем все приложения при открытии панели
+        allApps = getAllApps();
+        loadFavoriteApps();
+    }
+    
     function loadFavoriteApps() {
         // Загрузка избранных приложений из конфигурации
         if (pluginApi && pluginApi.pluginSettings && pluginApi.pluginSettings.favorites) {
@@ -39,9 +46,9 @@ Item {
         var apps = [];
         try {
             if (typeof DesktopEntries !== 'undefined') {
-                const allApps = DesktopEntries.applications.values || [];
+                const desktopEntries = DesktopEntries.applications.values || [];
                 
-                apps = allApps.filter(function(app) {
+                apps = desktopEntries.filter(function(app) {
                     if (!app) return false;
                     
                     var noDisplay = app.noDisplay || false;
@@ -111,17 +118,13 @@ Item {
         });
         
         if (!alreadyInFavorites) {
-            // Сохраняем полные данные приложения для запуска
+            // Сохраняем только идентификатор и данные для отображения
             var favApp = {
                 id: app.id || "",
                 name: app.name || "",
                 icon: app.icon || "",
                 comment: app.comment || "",
-                isFavorite: true,
-                // Сохраняем команду запуска
-                command: app.command || null,
-                exec: app.exec || "",
-                execute: app.execute || null
+                isFavorite: true
             };
             
             favoriteApps.push(favApp);
@@ -170,6 +173,34 @@ Item {
         }
     }
     
+    function findAppById(appId) {
+        if (!allApps || allApps.length === 0) {
+            // Попробуем загрузить приложения, если список пустой
+            allApps = getAllApps();
+        }
+        
+        return allApps.find(function(app) {
+            return app.id === appId;
+        });
+    }
+    
+    function getFullAppFromFavorite(favApp) {
+        if (!favApp || !favApp.id) return null;
+        
+        var fullApp = findAppById(favApp.id);
+        if (!fullApp) {
+            Logger.w("Приложение не найдено в общем списке:", favApp.id, favApp.name);
+            // Попробуем найти по имени, если не нашли по ID
+            fullApp = allApps.find(function(app) {
+                return app.name === favApp.name;
+            });
+            if (fullApp) {
+                Logger.i("Найдено приложение по имени:", favApp.name);
+            }
+        }
+        return fullApp;
+    }
+    
     function launchApp(app) {
         if (pluginApi) {
             pluginApi.closePanel();
@@ -177,23 +208,39 @@ Item {
         
         Qt.callLater(function() {
             try {
-                Logger.i("Запуск приложения:", app.name || app.id);
+                // Определяем, какое приложение запускать
+                var appToLaunch;
                 
-                // Используем сохраненные команды из приложения
-                if (app.command && Array.isArray(app.command) && app.command.length > 0) {
-                    if (typeof Quickshell !== 'undefined' && Quickshell.execDetached) {
-                        Quickshell.execDetached(app.command);
+                if (currentTab === 0) {
+                    // Из общего списка - используем напрямую
+                    appToLaunch = app;
+                } else {
+                    // Из избранного - ищем полное приложение
+                    appToLaunch = getFullAppFromFavorite(app);
+                    
+                    if (!appToLaunch) {
+                        Logger.e("Не удалось найти полное приложение для запуска:", app.name || app.id);
+                        // Пробуем запустить напрямую из избранного
+                        appToLaunch = app;
+                        Logger.i("Пробуем запустить из избранного напрямую");
                     }
-                } else if (app.execute && typeof app.execute === 'function') {
-                    app.execute();
-                } else if (app.exec) {
-                    var command = app.exec.split(' ');
+                }
+                
+                Logger.i("Запуск приложения:", appToLaunch.name || appToLaunch.id);
+                
+                if (appToLaunch.command && Array.isArray(appToLaunch.command) && appToLaunch.command.length > 0) {
+                    if (typeof Quickshell !== 'undefined' && Quickshell.execDetached) {
+                        Quickshell.execDetached(appToLaunch.command);
+                    }
+                } else if (appToLaunch.execute && typeof appToLaunch.execute === 'function') {
+                    appToLaunch.execute();
+                } else if (appToLaunch.exec) {
+                    var command = appToLaunch.exec.split(' ');
                     if (typeof Quickshell !== 'undefined' && Quickshell.execDetached) {
                         Quickshell.execDetached(command);
                     }
                 } else {
-                    Logger.e("Нет команды для запуска приложения:", app.name || app.id);
-                    // Можно добавить уведомление пользователю
+                    Logger.e("Нет команды для запуска приложения:", appToLaunch.name || appToLaunch.id);
                 }
             } catch (e) {
                 Logger.e("Ошибка при запуске приложения:", e);
